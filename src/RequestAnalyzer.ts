@@ -11,7 +11,7 @@ export interface IPatternRecognizer {
   isMatch(value: string): boolean;
 }
 
-export class Route {
+class Route {
   host: string;
   path: string;
   constructor(host: string, path: string) {
