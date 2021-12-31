@@ -2,6 +2,7 @@ export interface IUrlPart {
   value: string;
   type: string;
   position: string;
+  isOptinal: Boolean;
   childern: IUrlPart[];
 }
 
@@ -29,6 +30,7 @@ export class RequestAnalyzer {
       value: host,
       type: "host",
       position: "host",
+      isOptinal: false,
       childern: [],
     };
   }
@@ -69,8 +71,9 @@ export class RequestAnalyzer {
       // so mark the query param as optional and remove the terminator
       // this assumes that they params are ordered in the request, so not 100%, but good enough for the excersize
 
+      let isOptinal = false;
       if (currentNode.childern.some((c) => c.type == "terminator")) {
-        position += "Optional";
+        isOptinal = true;
         currentNode.childern = currentNode.childern.filter(
           (c) => c.position != "terminator"
         );
@@ -80,6 +83,7 @@ export class RequestAnalyzer {
         value: pathPartValue,
         type: pathPartType,
         childern: [],
+        isOptinal: isOptinal,
         position: position,
       };
       currentNode.childern.push(newNode);
@@ -114,7 +118,7 @@ export class RequestAnalyzer {
 
     if (currentNode.childern.some((c) => c.position != "terminator")) {
       currentNode.childern.forEach((c) => {
-        c.position += "Optional";
+        c.isOptinal = true;
       });
     }
 
@@ -124,6 +128,7 @@ export class RequestAnalyzer {
         value: "",
         type: "terminator",
         position: "terminator",
+        isOptinal: false,
         childern: [],
       });
     }
@@ -148,18 +153,14 @@ export class RequestAnalyzer {
   // getUrlString gets the string representation the the url part
   // marks the part as optional in output by surrounding with (? )
   private getUrlString(urlPart: IUrlPart): string {
-    let seperator = "/";
-
     // Again, this only works for the excersize
     // in the "real world" we'll have to figure out which one is first
-    if (urlPart.position == "query") {
-      seperator = "?";
-    } else if (urlPart.position == "queryOptional") {
-      seperator = "&";
-    }
+
+    let seperator =
+      urlPart.position == "path" ? "/" : !urlPart.isOptinal ? "&" : "?";
 
     let value = urlPart.value;
-    if (urlPart.position.endsWith("Optional")) {
+    if (urlPart.isOptinal) {
       value = `(?${value})`;
     }
 
